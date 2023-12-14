@@ -1,0 +1,1 @@
+This project will be a simple Language Learning Journaling tool. It will help users to learn a new language by helping then with small activities, it will use LLM system to help users to learn a new language. And it will also make use of News from the desired language so it can also help with reading. 
