@@ -17,12 +17,14 @@ type IAPI interface {
 	GenerateLanguageInfo(w http.ResponseWriter, r *http.Request) ([]Language, error)
 	DetermineLanguageLvl(w http.ResponseWriter, r *http.Request) ([]Language, error)
 	UpdateLanguageInfo(w http.ResponseWriter, r *http.Request) ([]Language, error)
+	TranslateQuestions(w http.ResponseWriter, r *http.Request) ([]Language, error)
 }
 
 // This API should implement the http.Handler interface:
 type API struct {
-	ListenAddr string
 	db         *db.DB
+	ListenAddr string
+	ExternalApi
 	IAPI
 }
 
@@ -32,8 +34,11 @@ func New(listenAddr string) *API {
 		return nil
 	}
 
+	ExternalApi := NewExternalAPI("http://127.0.0.1:11434/api/generate", "mistral")
+
 	return &API{
-		ListenAddr: listenAddr,
-		db:         db,
+		ListenAddr:  listenAddr,
+		db:          db,
+		ExternalApi: *ExternalApi,
 	}
 }

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -9,11 +10,6 @@ type Language struct {
 	Language       string `json:"language"`
 	Level          string `json:"level"`
 	TimeOfLearning string `json:"timeOfLearning"`
-}
-
-type BaseQuestion struct {
-	Question string `json:"question"`
-	Answer   string `json:"answer"`
 }
 
 func (a *API) GetLanguageInfo(w http.ResponseWriter, r *http.Request) ([]Language, error) {
@@ -42,19 +38,18 @@ func (a *API) DetermineLanguageLvl(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Base Questions for determine Language Level, get from the database
-	baseQuestions, err := a.db.GetBaseQuestions(req.Language)
+	baseQuestions, err := a.db.GetBaseQuestions()
 	if err != nil {
+		log.Default().Fatalf("Error getting base questions: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 
-	if questions, ok := baseQuestions.([]BaseQuestion); ok {
-		// Send the base questions and answers to the LLM and translate them into the user's selected language
-		// Send the translated questions and answers to the user
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(questions)
-	} else {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(questions)
-		// w.WriteHeader(http.StatusInternalServerError)
+	final, err := a.TranslateQuestions(req.Language, baseQuestions)
+	if err != nil {
+		log.Default().Fatalf("Error translating questions: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(final)
 }
