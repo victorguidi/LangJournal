@@ -11,12 +11,13 @@ import (
 
 type DB struct {
 	db *sql.DB
-	// Storage
 }
 
-// type Storage interface {
-// 	GetBaseQuestions(language string) (interface{}, error)
-// }
+type BaseQuestions struct {
+	Question  string `json:"question"`
+	Answer    string `json:"answer"`
+	IsCorrect bool   `json:"isCorrect"`
+}
 
 func New() (*DB, error) {
 	connString := fmt.Sprintf("postgresql://%s:%s@%s/%s?sslmode=disable", os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_NAME"))
@@ -38,7 +39,27 @@ func New() (*DB, error) {
 
 }
 
-func (d *DB) GetBaseQuestions(language string) (interface{}, error) {
-	var obj []string
-	return obj, nil
+func (d *DB) GetBaseQuestions() ([]BaseQuestions, error) {
+
+	questions, err := d.db.Query(`
+    SELECT q.question, a.answer, a.is_correct FROM defaultquestions q
+    LEFT JOIN Answers a ON q.id = a.question_id
+  `)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var baseQuestions []BaseQuestions
+
+	for questions.Next() {
+		var question BaseQuestions
+		err = questions.Scan(&question.Question, &question.Answer, &question.IsCorrect)
+		if err != nil {
+			return nil, err
+		}
+		baseQuestions = append(baseQuestions, question)
+	}
+
+	return baseQuestions, nil
 }
